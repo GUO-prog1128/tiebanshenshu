@@ -67,8 +67,15 @@ function calculateCorrection(originalCorrection, age) {
 }
 
 async function readCsv(filename, withHeader = true) {
-  const resp = await fetch(`./data/${filename}`);
-  if (!resp.ok) throw new Error(`读取数据库失败: ${filename}`);
+  let resp = null;
+  for (const base of ["./data", "./数据库"]) {
+    const tryResp = await fetch(`${base}/${filename}`);
+    if (tryResp.ok) {
+      resp = tryResp;
+      break;
+    }
+  }
+  if (!resp) throw new Error(`读取数据库失败: ${filename}`);
 
   const buf = await resp.arrayBuffer();
   let text = "";
@@ -194,6 +201,7 @@ class TiebanData {
 
     const d14112 = await readCsv("14-11-2.csv");
     for (const r of d14112) {
+      if (!r || typeof r !== "object") continue;
       const num = Number(r["先天命数"] || 0);
       const gan = cleanKey(r["天干"] || r["年干组"]);
       if (!num || !gan) continue;
@@ -235,7 +243,12 @@ class TiebanData {
       this.correctionToLetter.set(`${correction}|${age}`, letter);
     }
 
-    const duanyuRows = await readCsv("fortune_duanyu.csv");
+    let duanyuRows = [];
+    try {
+      duanyuRows = await readCsv("fortune_duanyu.csv");
+    } catch {
+      duanyuRows = await readCsv("铁板神数-条文断词.csv");
+    }
     for (const r of duanyuRows) {
       const num = Number(r["条文数"] || r["条文数字"] || 0);
       if (!num) continue;
@@ -308,7 +321,7 @@ function calculateAll(db, gender, birth, query) {
   if (congNum <= 0) congNum += 12;
 
   const ganGroup = getGanGroup(yGan);
-  const tone = (db.tables["14-3"][congNum] || {})[ganGroup] || "宫";
+  const tone = (db.tables["14-3"]?.[congNum] || {})[ganGroup] || "宫";
   const toneNum = db.tables["14-4"][tone] ?? 5;
 
   const dayN = NAYIN_WUXING[dDay] || "金";
