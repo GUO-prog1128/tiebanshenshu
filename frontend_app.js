@@ -467,15 +467,31 @@ function calculateAll(db, gender, birth, query) {
   };
 }
 
-function formatDestiny(tblData) {
+function formatDestinyNumbers(db, title, offsetList, base, seq) {
+  const lines = [];
+  for (const off of offsetList || []) {
+    const n = base + seq + off;
+    const { duanyu, age } = getFortuneDuanyu(db, String(n));
+    const ageHint = age && age !== "未知" ? `（条文年龄提示：${age}）` : "";
+    lines.push(`  ${base}+${seq}+${off} = ${n}  —— ${duanyu}${ageHint}`);
+  }
+  if (!lines.length) lines.push("  （无数值）");
+  return `${title}:\n${lines.join("\n")}`;
+}
+
+function formatDestiny(db, tblData) {
   if (!tblData) return "未找到匹配的本命条文数据";
   const { base, seq, offsets } = tblData;
   return [
     `基数+序数: ${base}+${seq}=${base + seq}`,
-    `性格: ${JSON.stringify((offsets["性格"] || []).map((x) => base + seq + x))}`,
-    `才能前程: ${JSON.stringify((offsets["才能前程"] || []).map((x) => base + seq + x))}`,
-    `财运: ${JSON.stringify((offsets["财运"] || []).map((x) => base + seq + x))}`,
-    `兄弟个数: ${JSON.stringify((offsets["兄弟个数"] || []).map((x) => base + seq + x))}`,
+    "",
+    formatDestinyNumbers(db, "性格", offsets["性格"], base, seq),
+    "",
+    formatDestinyNumbers(db, "才能前程", offsets["才能前程"], base, seq),
+    "",
+    formatDestinyNumbers(db, "财运", offsets["财运"], base, seq),
+    "",
+    formatDestinyNumbers(db, "兄弟个数", offsets["兄弟个数"], base, seq),
   ].join("\n");
 }
 
@@ -552,7 +568,7 @@ ui.runBtn.addEventListener("click", async () => {
       `出生八字: ${birthInfo.bazi.year} ${birthInfo.bazi.month} ${birthInfo.bazi.day} ${birthInfo.bazi.time}`,
       `求测八字: ${queryInfo.bazi.year} ${queryInfo.bazi.month} ${queryInfo.bazi.day} ${queryInfo.bazi.time}`,
     ].join("\n");
-    ui.destinyEl.value = formatDestiny(result.tblData);
+    ui.destinyEl.value = formatDestiny(loadedDb, result.tblData);
     renderLiunian(ui.liunianBody, result.liunian);
     ui.statusEl.textContent = "测算完成（纯前端完整版：核心 + 本命 + 流年1-100）";
     ui.statusEl.className = "ok small";
