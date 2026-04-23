@@ -82,7 +82,7 @@ function decodeCsvBytes(buf) {
 async function readCsv(filename, withHeader = true) {
   let resp = null;
   for (const base of ["./data", "./数据库"]) {
-    const tryResp = await fetch(`${base}/${filename}`);
+    const tryResp = await fetch(`${base}/${filename}`, { cache: "no-store" });
     if (tryResp.ok) {
       resp = tryResp;
       break;
