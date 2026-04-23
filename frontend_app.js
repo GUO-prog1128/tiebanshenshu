@@ -66,6 +66,19 @@ function calculateCorrection(originalCorrection, age) {
   return v;
 }
 
+function decodeCsvBytes(buf) {
+  const u8 = new Uint8Array(buf);
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(u8);
+  } catch {
+    try {
+      return new TextDecoder("gb18030").decode(u8);
+    } catch {
+      return new TextDecoder("utf-8").decode(u8);
+    }
+  }
+}
+
 async function readCsv(filename, withHeader = true) {
   let resp = null;
   for (const base of ["./data", "./数据库"]) {
@@ -78,12 +91,7 @@ async function readCsv(filename, withHeader = true) {
   if (!resp) throw new Error(`读取数据库失败: ${filename}`);
 
   const buf = await resp.arrayBuffer();
-  let text = "";
-  try {
-    text = new TextDecoder("gb18030").decode(buf);
-  } catch {
-    text = new TextDecoder("utf-8").decode(buf);
-  }
+  const text = decodeCsvBytes(buf);
   const parsed = Papa.parse(text, { header: withHeader, skipEmptyLines: true });
   return parsed.data;
 }
@@ -273,6 +281,13 @@ function parseInputDatetime(dtStr) {
   return new Date(year, month - 1, day, hour, minute, 0);
 }
 
+function pillarStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object" && typeof v.toString === "function") return String(v.toString());
+  return String(v);
+}
+
 function convertToBaziInfo(dt) {
   const solarLib = window.Solar || (window.lunar && window.lunar.Solar);
   if (!solarLib) throw new Error("lunar-javascript 加载失败");
@@ -291,7 +306,12 @@ function convertToBaziInfo(dt) {
     lunar_month: Math.abs(lm),
     lunar_day: lunar.getDay(),
     is_leap: lm < 0,
-    bazi: { year: ec.getYear(), month: ec.getMonth(), day: ec.getDay(), time: ec.getTime() },
+    bazi: {
+      year: pillarStr(ec.getYear()),
+      month: pillarStr(ec.getMonth()),
+      day: pillarStr(ec.getDay()),
+      time: pillarStr(ec.getTime()),
+    },
     date_str: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`,
     lunar_str: lunar.toString(),
   };
