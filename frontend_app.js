@@ -550,6 +550,10 @@ ui.runBtn.addEventListener("click", async () => {
   ui.errorEl.textContent = "";
   try {
     setLoading(true, "准备计算...");
+    const defaultTime = "1900-01-01 00:00";
+    if (ui.birthEl.value.trim() === defaultTime || ui.queryEl.value.trim() === defaultTime) {
+      throw new Error("请先填写真实的出生时间和求测时间，再开始测算。");
+    }
     const loadedDb = await ensureDbLoaded();
     const gender = ui.genderEl.value.trim();
     const birthInfo = convertToBaziInfo(parseInputDatetime(ui.birthEl.value));
