@@ -13,6 +13,7 @@ const NAYIN_WUXING = {
 
 const TIANGAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
 const DIZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+const GANZHI_RE = /[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/;
 
 function cleanKey(val) {
   if (val === null || val === undefined) return "";
@@ -52,6 +53,15 @@ function getLiunianGroups(yearGan, yearZhi) {
   else if ("庚辛".includes(yearGan)) sGroup = "庚辛";
   else if ("壬癸".includes(yearGan)) sGroup = "壬癸";
   return { bGroup, sGroup };
+}
+
+function parseGanZhiPair(rawPillar) {
+  const s = cleanKey(rawPillar);
+  const m = s.match(GANZHI_RE);
+  const gz = m ? m[0] : s;
+  const gan = gz[0] || "";
+  const zhi = gz[1] || "";
+  return { gan, zhi, gz };
 }
 
 function calculateCorrection(originalCorrection, age) {
@@ -325,12 +335,17 @@ function getFortuneDuanyu(db, fortuneNum) {
 }
 
 function calculateAll(db, gender, birth, query) {
-  const yGan = birth.bazi.year[0];
-  const yZhi = birth.bazi.year[1];
-  const tZhi = birth.bazi.time[1];
-  const dDay = birth.bazi.day;
-  const tGan = query.bazi.time[0];
-  const tTime = query.bazi.time;
+  const yearPillar = parseGanZhiPair(birth.bazi.year);
+  const birthTimePillar = parseGanZhiPair(birth.bazi.time);
+  const dayPillar = parseGanZhiPair(birth.bazi.day);
+  const queryTimePillar = parseGanZhiPair(query.bazi.time);
+
+  const yGan = yearPillar.gan;
+  const yZhi = yearPillar.zhi;
+  const tZhi = birthTimePillar.zhi;
+  const dDay = dayPillar.gz;
+  const tGan = queryTimePillar.gan;
+  const tTime = queryTimePillar.gz;
 
   let calcMonth = String(birth.lunar_month + (birth.is_leap ? 1 : 0));
   if (Number(calcMonth) > 12) calcMonth = "1";
