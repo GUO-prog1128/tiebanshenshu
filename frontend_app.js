@@ -353,7 +353,8 @@ function calculateAll(db, gender, birth, query) {
   const monthVal = db.tables["14-1"][calcMonth] ?? Number(calcMonth);
   const timeVal = db.tables["14-2"][tZhi] ?? 0;
   let congNum = monthVal + 3 - timeVal;
-  if (congNum <= 0) congNum += 12;
+  while (congNum <= 0) congNum += 12;
+  while (congNum > 12) congNum -= 12;
 
   const ganGroup = getGanGroup(yGan);
   const tone = (db.tables["14-3"]?.[congNum] || {})[ganGroup] || "宫";
